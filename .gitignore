@@ -1,0 +1,9 @@
+# IDEs folders
+.idea
+.vscode
+.fleet
+
+# Compiling things
+*.o
+bin/*
+!bin/*.*
