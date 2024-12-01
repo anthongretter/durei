@@ -8,7 +8,7 @@ BIN := $(DUR)/bin
 
 # Compiling flags
 CXX       := g++
-CXXFLAGS  := -Wall -Wextra -Werror
+CXXFLAGS  := -Wall -Wextra
 CPPFLAGS  := -I$(INC)
 LDFLAGS   := -lstdc++
 LDLIBS    :=
@@ -20,9 +20,9 @@ MKDIR := mkdir -p
 
 # Files
 TARGET  := $(BIN)/dur
-SRCS    := $(shell find $(SRC) -type f -name "*.cc")
-OBJS    := $(SRCS:.cc=.o)
-HS      := $(wildcard $(INC)/*.h)
+SRCS    := $(shell find $(SRC) -type f -name "*.cpp")
+OBJS    := $(SRCS:.cpp=.o)
+HS      := $(wildcard $(INC)/*.hpp)
 
 
 $(TARGET): $(OBJS)
