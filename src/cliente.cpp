@@ -10,84 +10,12 @@
 #include <algorithm>
 #include <cctype>
 
-Cliente::Cliente(int cliente_id) {
-    id = cliente_id;
-}
-
-int Cliente::lerConfiguracaoServidores(const std::string& arquivo) {
-    std::ifstream arquivoEntrada(arquivo);
-    if (!arquivoEntrada.is_open()) {
-        std::cerr << "Erro ao abrir o arquivo: " << arquivo << "\n";
-        return 1;
-    }
-
-    std::string linha;
-    while (std::getline(arquivoEntrada, linha)) {
-        std::istringstream linhaStream(linha);
-        std::string id_str, restante;
-
-        // Lê o ID antes de ":"
-        if (!std::getline(linhaStream, id_str, ':')) {
-            std::cerr << "Formato inválido na linha: " << linha << " do arquivo " << arquivo << "\n";
-            return 1;
-        }
-        id_str.erase(0, id_str.find_first_not_of(" \t"));
-        id_str.erase(id_str.find_last_not_of(" \t") + 1);
-        if (id_str.empty() || !std::all_of(id_str.begin(), id_str.end(), ::isdigit)) {
-            std::cerr << "ID inválido na linha: " << linha << " do arquivo " << arquivo << "\n";
-            return 1;
-        }
-
-        // Converte o ID para inteiro
-        int s_id;
-        try {
-            s_id = std::stoi(id_str);
-        } catch (...) {
-            std::cerr << "ID inválido na linha: " << linha << " do arquivo " << arquivo << "\n";
-            return 1;
-        }
-
-        // Lê o restante da linha após ":"
-        if (!std::getline(linhaStream, restante)) {
-            std::cerr << "Formato inválido na linha: " << linha << " do arquivo " << arquivo << "\n";
-            return 1;
-        }
-
-        // Processa o restante para obter IP e Porta
-        std::istringstream restanteStream(restante);
-        std::string ip, porta_str;
-        int porta;
-
-        if (std::getline(restanteStream, ip, ',') && std::getline(restanteStream, porta_str)) {
-            // Remove espaços em branco do IP
-            ip.erase(0, ip.find_first_not_of(" \t"));
-            ip.erase(ip.find_last_not_of(" \t") + 1);
-            for (char c : ip) {
-                if (!isdigit(c) && c != '.') {
-                    std::cerr << "Ip inválido na linha: " << linha << " do arquivo " << arquivo << "\n";
-                    return 1;
-                }
-            }
-            porta_str.erase(0, porta_str.find_first_not_of(" \t"));
-            porta_str.erase(porta_str.find_last_not_of(" \t") + 1);
-            if (porta_str.empty() || !std::all_of(porta_str.begin(), porta_str.end(), ::isdigit)) {
-                std::cerr << "Porta inválida na linha: " << linha << " do arquivo " << arquivo << "\n";
-                return 1;
-            }
-            try {
-                porta = std::stoi(porta_str);
-            } catch (...) {
-                std::cerr << "Porta inválida na linha: " << linha << " do arquivo " << arquivo << "\n";
-                return 1;
-            }
-            // Salva no mapa de servidores
-            servidores[s_id] = {ip, porta};
-        } else {
-            std::cerr << "Erro ao processar IP e Porta na linha: " << linha << " do arquivo " << arquivo << "\n";
-            return 1;
-        }
-    }
-    return 0;
+Cliente::Cliente(std::string cliente_ip, int cliente_port, std::map<int, std::tuple<std::string, int>> serv, 
+                std::tuple<std::string, int> seq) {
+    porta = cliente_port;
+    ip = cliente_ip;
+    servidores = serv;
+    sequenciador = seq;
 }
 
 void Cliente::printarTransacoes() {
@@ -97,7 +25,7 @@ void Cliente::printarTransacoes() {
     }
 }
 
-int Cliente::escolherServidor() {
+int Cliente::escolherServidorAleatorio() {
     std::vector<int> chaves;
     
     // Preenche o vetor de chaves com as chaves do mapa
@@ -116,10 +44,11 @@ int Cliente::escolherServidor() {
 }
 
 void Cliente::executar() {
-    std::cout << "Cliente " << id << " iniciado. Digite 'close' para encerrar.\n";
+    std::cout << "Cliente iniciado. Digite 'close' para encerrar.\n";
     std::string comando;
 
     int status = 0;
+    int new_t_id = 1;
 
     while (true) {
         if (status == 0) {
@@ -133,11 +62,48 @@ void Cliente::executar() {
                 break;
             } else if (comando == "ls") {
                 printarTransacoes();
-            } else if (comando == "new") {  // Cria nova transação
-                int s_id = escolherServidor();
-                status = transacoes.size() + 1;
-                Transacao nova_transacao(status, id, s_id, servidores);
-                transacoes[status] = nova_transacao;
+            } else if (comando.rfind("new", 0) == 0) {  // Cria nova transação
+                std::istringstream stream(comando);
+                std::string new_str, servidor;
+                stream >> new_str >> servidor;
+                new_str.erase(0, new_str.find_first_not_of(" \t")); // Remove espaços no início
+                new_str.erase(new_str.find_last_not_of(" \t") + 1); // Remove espaços no final
+                if (new_str != "new") {
+                    std::cout << "Comando inválido\n";
+                } else {
+
+                    // Verificar se foi dado um id de servidor, caso contrário escolhe um aleatorio
+                    if (!servidor.empty()) {
+                        try {
+                            int id_servidor = std::stoi(servidor);
+                            auto it = servidores.find(id_servidor);
+                            if (it != servidores.end()) {
+                                const auto& info_serv = it->second;
+                                std::tuple id_info_serv = std::tuple_cat(std::make_tuple(id_servidor), info_serv);
+                                std::tuple<std::string, int> cliente_info(ip, porta);
+                                status = new_t_id;
+                                Transacao nova_transacao(status, cliente_info, sequenciador, id_info_serv);
+                                new_t_id++;
+                                transacoes[status] = nova_transacao;
+                            } else {
+                                std::cout << "ID " << servidor << " do servidor inválido\n";
+                            }
+                        } catch (...) {
+                            std::cout << "ID " << servidor << " do servidor inválido\n";
+                        }
+                    } else {
+                        int s_id = escolherServidorAleatorio();
+                        auto it = servidores.find(s_id);
+                        const auto& info_serv = it->second;
+                        std::tuple id_info_serv = std::tuple_cat(std::make_tuple(s_id), info_serv);
+                        std::tuple<std::string, int> cliente_info(ip, porta);
+                        status = new_t_id;
+                        Transacao nova_transacao(status, cliente_info, sequenciador, id_info_serv);
+                        transacoes[status] = nova_transacao;
+                        new_t_id++;
+                    }
+                }
+
             } else if (comando.rfind("transaction_", 0) == 0) {
                 std::string numero_str = comando.substr(12);
                 try {
@@ -208,8 +174,11 @@ void Cliente::executar() {
                 }
             } else if (comando == "commit") {
                 t.commit();
+                transacoes.erase(it);
+                status = 0;
             } else if (comando == "abort") {
                 transacoes.erase(it);
+                status = 0;
             } else {
                 std::cout << "Comando desconhecido.\n";
             }

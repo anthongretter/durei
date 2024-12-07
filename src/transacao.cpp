@@ -3,34 +3,28 @@
 #include <sys/socket.h>
 #include <variant>
 #include <arpa/inet.h>
+#include <nlohmann/json.hpp>
 
-Transacao::Transacao(int c_id, int t, int s_id, std::map<int, std::tuple<std::string, int>> servidores) {
-    c_id = c_id;
+Transacao::Transacao(int t, std::tuple<std::string, int> c, std::tuple<std::string, int> seq, std::tuple<int, std::string, int> serv) {
     t = t;
-    s_id = s_id;
-    servidores = servidores;
+    cliente = c;
+    sequenciador = seq;
+    servidor = serv;
 }
 
 void Transacao::read(std::string item) {
     auto it = ws.find(item);
     if (it != ws.end()) {
-        // TODO
-        // como ficam as versões??
-
+        std::cout << "VARIÁVEL " << item << " ENCONTRADA EM WS -- VALOR: " << it->second << "\n";
     } else {
-        const auto& tupla = servidores[s_id];
-        const std::string& ip = std::get<0>(tupla);
-        const int& porta = std::get<1>(tupla);
-
-        int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-        struct sockaddr_in address;
-        address.sin_family = AF_INET;
-        address.sin_addr.s_addr = inet_addr(ip.c_str());
-        address.sin_port = htons(porta);
-        int len = sizeof(address);
-        // int result = connect(sockfd, (struct sockaddr *)&address, len);
-        // PEDIR item pro servidor
-        // printar mensagem de recebimento
+        std::cout << "PEDINDO VARIÁVEL " << item << " PARA SERVIDOR " << std::get<0>(servidor) << "\n";
+        std::string mensagem = "read(" + item + ")";
+        std::string to_ip = std::get<1>(servidor);
+        int to_port = std::get<2>(servidor);
+        // TODO:
+        // mandar por TCP mensagem para to_ip to_port
+        // receber o valor e printar 
+        // std::cout << "VARIÁVEL " << item << " RECEBIDA E ADICIONADA A RS  -- VALOR: " << valor << "   -- VERSÃO: " << versao << "\n";
     }
 }
 
@@ -41,25 +35,34 @@ void Transacao::write(std::string item, std::string valor) {
     } else {
         ws[item] = valor;
     }
-    std::cout << "VALOR " << valor << " ESCRITO EM " << item << "\n";
+    std::cout << "VALOR " << valor << " ESCRITO NA VARIÁVEL " << item << " EM WS\n";
 }
 
 void Transacao::commit() {
-    for (const auto& entry : servidores) {
-        auto& tupla = entry.second;
-        std::string ip = std::get<0>(tupla);
-        int porta = std::get<1>(tupla);
-
-        int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-        struct sockaddr_in address;
-        address.sin_family = AF_INET;
-        address.sin_addr.s_addr = inet_addr(ip.c_str());
-        address.sin_port = htons(porta);
-        int len = sizeof(address);
-        // int result = connect(sockfd, (struct sockaddr *)&address, len);
-        // MANDAR RS E WS
-        // aumenta as versões??
+    nlohmann::json commit = {
+        {"from", std::get<0>(cliente)},
+        {"port", std::get<1>(cliente)},
+        {"rs", {}},
+        {"ws", {}}
+    };
+    for (const auto& item : rs) {
+        const std::string& var = item.first;
+        const std::tuple<std::string, int>& tupla = item.second;
+        commit["rs"][var] = {std::get<0>(tupla), std::get<1>(tupla)};
     }
+    for (const auto& item : ws) {
+        const std::string& var = item.first;
+        const std::string& valor = item.second;
+        commit["ws"][var] = valor;
+    }
+
+    std::string json_str = commit.dump(4);
+    std::cout << json_str << std::endl;
+
+    // TODO:
+    // mandar para sequenciador  -- ip: std::get<0>(sequenciador)   porta: std::get<1>(sequenciador)
+    // receber resposta do servidor  -- tem que informar o servidor dessa transação no json????
+    // apaga a transacao e, dependendo da resposta, escreve mensagem de erro ou de confirmação da transacao
 }
 
 void Transacao::printarInfo() {

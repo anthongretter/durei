@@ -9,16 +9,18 @@
 
 class Cliente {
 public:
-    Cliente(int cliente_id);
-    int lerConfiguracaoServidores(const std::string& arquivo);
+    Cliente(std::string cliente_ip, int cliente_port, std::map<int,
+            std::tuple<std::string, int>> serv, std::tuple<std::string, int> seq);
     void executar();
 
 private:
-    int id;
+    std::string ip;
+    int porta;
     std::map<int, std::tuple<std::string, int>> servidores; // Mapa de servidores (ID -> (IP, Porta))
+    std::tuple<std::string, int> sequenciador;
     std::map<int, Transacao> transacoes;
 
-    int escolherServidor();
+    int escolherServidorAleatorio();
     void printarTransacoes();
 };
 
