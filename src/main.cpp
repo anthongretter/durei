@@ -1,7 +1,6 @@
 #include <iostream>
 #include "../include/cliente.hpp"
 #include "../include/meia.hpp"
-//#include "include/meia.hpp"
 
 
 int main(int argc, char* argv[]) {
@@ -27,15 +26,15 @@ int main(int argc, char* argv[]) {
 //    cliente.executar();
 
     // Exemplo Meia:
-    MeiaBoba sv("127.0.0.1", 1600);
-    sv.comecarEscutar();
+    MeiaBobaServidor sv("127.0.0.1", 8000);
 
-    MeiaBoba c("127.0.0.1", 1601);
-    c.registrarOutraMeia(0, "127.0.0.1", 1600);
-    c.conectarComOutrasMeias();
-    c.mandarPara(0, "Olá MeiaBoba");
+    MeiaBobaCliente c("127.0.0.1", 8001);
 
     std::this_thread::sleep_for(std::chrono::seconds(1)); // Simular
+    c.mandarPara("127.0.0.1", 8000, "Olá MeiaBobaServidor sou " + c.cabecalho());
+    c.comecarEscutar();
+
+    std::this_thread::sleep_for(std::chrono::seconds(3)); // Simular
 
 
     sv.pararDeEscutar();

@@ -7,52 +7,45 @@
 #include <netinet/in.h>
 #include <fcntl.h>
 #include <stdatomic.h>
+#include <string>
 #include <unistd.h>
 
 
 Meia::Meia(const std::string &ip, const int &port)
-        : _ip(ip), _porta(port), _escutando(false), _parar(true) {}
+        : _ip(ip), _porta(port), _escutando(false), _parar(true) {
+
+    _socketfd = socket(IPV4, TCP, 0);
+//    fcntl(_socketfd, F_SETFL, O_NONBLOCK);
+}
 
 
 Meia::~Meia() {
     pararDeEscutar();
+    close(_socketfd);
+}
 
-    for (SocketEmbrulho meia : _outrasMeias) {
-        close(meia.socketfd);
+
+int Meia::mandarPara(const std::string &ip, const int &porta, const std::string &mensagem) {
+    int destinatariofd = _obterDestinatario(ip, porta);
+    if (destinatariofd == -1) {
+        return -1;
     }
-}
 
+    std::string para = ip + ":" + std::to_string(porta);
+    std::cout << _ip << ":" << _porta << " -> "<< para << " Mandando: " << mensagem << std::endl;
 
-int Meia::mandarPara(const int &numeroMeia, const std::string &mensagem) {
-    std::cout << _ip << ":" << _porta << " -> Mandando: " << mensagem << std::endl;
-    return send(_outrasMeias.at(numeroMeia).socketfd, mensagem.c_str(), strlen(mensagem.c_str()), 0);
-}
-
-
-void Meia::registrarOutraMeia(const int numeroMeia, const std::string &ip, const int &porta) {
-    SocketEmbrulho outraMeia = _novoSocket(ip, porta);
-    _outrasMeias.insert(_outrasMeias.begin() + numeroMeia, outraMeia);
-}
-
-
-void Meia::conectarComOutrasMeias() {
-    for (SocketEmbrulho meia : _outrasMeias) {
-        connect(meia.socketfd, (struct sockaddr*) &meia.addr, sizeof(meia.addr));
+    {
+        LockGuard lock(_mutex);
+        return send(destinatariofd, mensagem.c_str(), strlen(mensagem.c_str()), 0);
     }
 }
 
 
 void Meia::comecarEscutar() {
     {
-        std::lock_guard<std::mutex> lock(_mutex);
+        LockGuard lock(_mutex);
         _escutando = true;
         _parar = false;
-
-        SocketEmbrulho embrulho = _novoSocket(_ip, _porta);
-        _socketfdOuvinte = embrulho.socketfd;
-
-        bind(_socketfdOuvinte, (struct sockaddr*) &embrulho.addr, sizeof(embrulho.addr));
-        listen(_socketfdOuvinte, MAX_CLIENTS);
         _threadOuvinte = std::thread(&Meia::_escutar, this);
     }
     _cv.notify_one();
@@ -61,7 +54,7 @@ void Meia::comecarEscutar() {
 
 void Meia::pararDeEscutar() {
     {
-        std::lock_guard<std::mutex> lock(_mutex);
+        LockGuard lock(_mutex);
         _escutando = false;
         _parar = true;
     }
@@ -69,7 +62,6 @@ void Meia::pararDeEscutar() {
 
     if (_threadOuvinte.joinable()) {
         _threadOuvinte.join();
-        close(_socketfdOuvinte);
     }
 
     for (std::thread* t : _threadsDeLidacoes) {
@@ -90,13 +82,27 @@ void Meia::_escutar() {
         if (!_escutando && _parar) return;
 
         char buffer[1024] = {0};    // mudar este jeito
-        int meiaCliente = accept(_socketfdOuvinte, nullptr, nullptr);
-
-        if (recv(meiaCliente, buffer, sizeof(buffer), 0) != -1) {
-            std::thread * lidador = new std::thread(&Meia::lidarComMensagem, this, buffer);
-            _threadsDeLidacoes.push_back(lidador);
+        int bytesLidos;
+        {
+            LockGuard lock(_mutex);
+            bytesLidos = recv(_socketfd, &buffer, sizeof(buffer), 0);
         }
+
+        Reacao reacao;
+
+        if (bytesLidos > 0) reacao = ALGO_A_LER;
+        else if (bytesLidos == 0) reacao = CONEXAO_ENCERRADA;
+        else if (bytesLidos == -1 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == ENOTCONN)) reacao = NADA_A_LER;
+        else {
+            fprintf(stderr, "Erro no recv(): %s\n", strerror(errno));
+            reacao = ERRO;
+        }
+
+        _reagirAoEscutado(reacao, std::string(buffer), 0);
 
         std::this_thread::sleep_for(std::chrono::seconds(1)); // Simular
     }
 }
+
+
+
