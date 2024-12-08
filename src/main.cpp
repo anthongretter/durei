@@ -1,7 +1,14 @@
-#include <iostream>
 #include "../include/cliente.hpp"
 #include "../include/meia.hpp"
-//#include "include/meia.hpp"
+#include "../include/sequencer.hpp"
+#include "../include/server.hpp"
+
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <vector>
+#include <tuple>
+#include <sstream>
 
 
 int main(int argc, char* argv[]) {
@@ -27,18 +34,66 @@ int main(int argc, char* argv[]) {
 //    cliente.executar();
 
     // Exemplo Meia:
-    MeiaBoba sv("127.0.0.1", 1600);
-    sv.comecarEscutar();
+    // MeiaBoba sv("127.0.0.1", 1600);
+    // sv.comecarEscutar();
 
+
+
+    // sv.pararDeEscutar();
+    
+    Server servidor("127.0.0.1", 6000);
+
+    Sequenciador s("127.0.0.1", 1600, "src/servidores_config.txt");
+    
     MeiaBoba c("127.0.0.1", 1601);
     c.registrarOutraMeia(0, "127.0.0.1", 1600);
+    c.comecarEscutar();
     c.conectarComOutrasMeias();
-    c.mandarPara(0, "Olá MeiaBoba");
+    c.mandarPara(0, R"({
+    "from": "127.0.0.1",
+    "port": "1601",
+    "read": {
+        "x": [4, 6],
+        "y": [2, 3],
+        "g": [34, 3]
+    },
+    "write": {
+        "t": [7],
+        "j": [6],
+        "k": [4]
+    }
+    })");
+
 
     std::this_thread::sleep_for(std::chrono::seconds(1)); // Simular
 
 
-    sv.pararDeEscutar();
+    // MeiaBoba d("127.0.0.1", 1602);
+    // d.registrarOutraMeia(0, "127.0.0.1", 1600);
+    // d.comecarEscutar();
+    // d.conectarComOutrasMeias();
+    // d.mandarPara(0, R"({
+    // "from": "127.0.0.1",
+    // "port": "1602",
+    // "read": {
+    //     "x": [4, 6],
+    //     "y": [2, 3],
+    //     "g": [34, 3]
+    // },
+    // "write": {
+    //     "t": [7],
+    //     "j": [6],
+    //     "k": [4]
+    // }
+    // })");
+
+    // std::this_thread::sleep_for(std::chrono::seconds(1)); // Simular
+
+
+    s.pararDeEscutar();
+    servidor.pararDeEscutar();
+    c.pararDeEscutar();
+    // d.pararDeEscutar();
 
     return 0;
 }
