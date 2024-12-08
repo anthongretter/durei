@@ -53,8 +53,8 @@ int main(int argc, char* argv[]) {
     "from": "127.0.0.1",
     "port": "1601",
     "read": {
-        "x": [4, 6],
-        "y": [2, 3],
+        "x": [4, 1],
+        "y": [6, 1],
         "g": [34, 3]
     },
     "write": {
@@ -66,7 +66,6 @@ int main(int argc, char* argv[]) {
 
 
     std::this_thread::sleep_for(std::chrono::seconds(1)); // Simular
-
 
     // MeiaBoba d("127.0.0.1", 1602);
     // d.registrarOutraMeia(0, "127.0.0.1", 1600);

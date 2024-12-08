@@ -11,11 +11,11 @@
 #include "nlohmann/json.hpp"
 #include "meia.hpp"
 
+using json = nlohmann::json;
 
 class Server : public Meia {
 public:
     Server(std::string ip, const int porta);
-    int enviarMensagens();
 
 private:
     std::string ip;
@@ -23,7 +23,7 @@ private:
 
     int proxima_mensagem = 0;
     void lidarComMensagem(const char mensagem[]) override;
-    void conferirTransacao() {};
+    bool conferirTransacao(json message_json);
     void registrarTransacao() {};
 };
 

@@ -24,11 +24,52 @@ void Server::lidarComMensagem(const char mensagem[]) {
 
     registrarOutraMeia(0, "127.0.0.1", port);
     conectarComOutrasMeias();
-    mandarPara(0, "OK");
+
+    bool abortar = conferirTransacao(parsed_json["MENSAGEM"]);
+
+    if (abortar) {
+        mandarPara(0, "Abortar");
+    } else {
+        mandarPara(0, "Sucesso");
+    }
+
 }
 
+bool Server::conferirTransacao(json message_json) {
 
-int Server::enviarMensagens() {
+    std::string filename = "dataBaseServers/dataSet.json";
+    std::ifstream file(filename);
 
-    return 0;
+    if (!file.is_open()) {
+        std::cerr << "Erro ao abrir o arquivo para leitura!" << std::endl;
+        return true;
+    }
+
+    json dataSet;
+    file >> dataSet;
+    file.close();
+
+    bool abortar = false;
+    if (message_json.contains("read")) {
+        auto read = message_json["read"];
+
+        // Percorrendo todos os campos dentro do objeto "read"
+        for (auto& [key, value] : read.items()) {
+            
+            // Verificando se o valor é uma lista (array)
+            if (value.is_array()) {
+                for (size_t i = 0; i < value.size(); ++i) {
+                    if ((dataSet.contains(key)) && (value[i] != dataSet[key][i])) {
+                        abortar = true;
+                    }
+                }
+            } else {
+                abortar = true;
+            }
+        }
+    }
+
+    if (abortar) return true;
+
+    return false;
 }
