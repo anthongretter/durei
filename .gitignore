@@ -11,3 +11,4 @@ src/*.o
 servidor
 cliente
 sequenciador
+mock
