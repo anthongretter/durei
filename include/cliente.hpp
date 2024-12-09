@@ -13,14 +13,16 @@ public:
             std::map<int,std::tuple<std::string, int>> serv, std::tuple<std::string, int> seq);
     void executar();
 
-private:
+protected:
+    std::map<int, std::shared_ptr<Transacao>> transacoes;
     std::string ip;
     int porta;
     std::map<int, std::tuple<std::string, int>> servidores; // Mapa de servidores (ID -> (IP, Porta))
     std::tuple<std::string, int> sequenciador;
-    std::map<int, std::shared_ptr<Transacao>> transacoes;
-
     int escolherServidorAleatorio();
+
+private:
+
     void printarTransacoes();
 };
 
