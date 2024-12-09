@@ -1,2 +1,5 @@
-# dur
-A Deferred Update Replication (DUR) implementation developed in the Distributed Systems chair
+# DURei
+#### Anthon Porath Gretter, Bianca
+A Deferred Update Replication (DUR) educational implementation, developed in the Distributed Systems chair
+
+## Problematic

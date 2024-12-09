@@ -6,6 +6,7 @@ Sequenciador::Sequenciador(std::string ip, int port, std::map<int, std::tuple<st
 {
     servidores = servs;
     inputThread = std::thread(&Sequenciador::waitForCloseCommand, this);
+    std::cout << "Sequenciador pronto!" << std::endl;
 }
 
 Sequenciador::~Sequenciador() {

@@ -1,10 +1,13 @@
 # DUR Makefile
 
+# Args
+IP 		?= 127.0.0.1
+PORT 	?= 8000
+
 # Directories
 DUR := $(abspath $(dir .))
 SRC := $(DUR)/src
 INC := $(DUR)/include
-# BIN := $(DUR)/bin
 
 # Compiling flags
 CXX       := g++
@@ -14,9 +17,11 @@ LDFLAGS   := -lstdc++
 LDLIBS    :=
 
 # Aliases
-RM    := rm -f
-RMDIR := rm -fr
-# MKDIR := mkdir -p
+RM    	:= rm -f
+RMDIR 	:= rm -fr
+TERM  	:= konsole
+TERMCMD	:= $(TERM) --hold --new-tab -e
+KILL  	:= killall
 
 # Files
 CLIENT_TARGET     := cliente
@@ -29,6 +34,7 @@ CLIENT_OBJS       := $(CLIENT_SRCS:.cpp=.o)
 SERVER_OBJS       := $(SERVER_SRCS:.cpp=.o)
 SEQUENCER_OBJS    := $(SEQUENCER_SRCS:.cpp=.o)
 HS                := $(wildcard $(INC)/*.hpp)
+CONF			  := $(DUR)/servidores_config.txt
 
 
 $(CLIENT_TARGET): $(CLIENT_OBJS)
@@ -44,7 +50,7 @@ all: $(CLIENT_TARGET) $(SERVER_TARGET) $(SEQUENCER_TARGET)
 
 
 run_cliente: $(CLIENT_TARGET)
-	@clear && ./$(CLIENT_TARGET)
+	@clear && ./$(CLIENT_TARGET) $(IP) $(PORT)
 
 run_servidor: $(SERVER_TARGET)
 	@clear && ./$(SERVER_TARGET)
@@ -52,7 +58,16 @@ run_servidor: $(SERVER_TARGET)
 run_sequencer: $(SEQUENCER_TARGET)
 	@clear && ./$(SEQUENCER_TARGET)
 
+infra: $(SERVER_TARGET) $(SEQUENCER_TARGET)
+	($(TERMCMD) "./$(SEQUENCER_TARGET)" &)
+	for server_id in $(shell awk -F":|," 'NR>1 {printf "%d ", $$1}' $(CONF)) ; do \
+		($(TERMCMD) "./$(SERVER_TARGET) $$server_id" &) ; \
+	done
+
+stop:
+	$(KILL) $(TERM)
+
 clean:
 	$(RM) $(CLIENT_OBJS) $(SERVER_OBJS) $(SEQUENCER_OBJS) $(CLIENT_TARGET) $(SERVER_TARGET) $(SEQUENCER_TARGET)
 
-.PHONY: all run_cliente run_servidor run_sequenciador clean
+.PHONY: all

@@ -8,6 +8,7 @@ Servidor::Servidor(int serv_id, std::string serv_ip, int serv_port, std::string 
     id = serv_id;
     db_caminho = db;
     inputThread = std::thread(&Servidor::waitForCloseCommand, this);
+    std::cout << "Servidor " << serv_id << " pronto! (" << serv_ip << ":" << serv_port << ")" << std::endl;
 }
 
 Servidor::~Servidor() {
