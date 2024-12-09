@@ -1,4 +1,5 @@
 #include <iostream>
+#include <thread>
 #include "../include/mockCliente.hpp"
 #include "../include/leitor_config.hpp"
 
@@ -94,8 +95,49 @@ void teste1() {
     cliente_1.enviarTransacao();
 }
 
+void tarefa(int id) {
+    std::cout << "Clientes concorrentes com 5 threads" << std::endl;
+
+    LeitorConfig leitor("servidores_config.txt");
+    const auto& it = leitor.getServidores().find(0);
+
+    int port = id + 1600;
+    MockCliente cliente("127.0.0.1", port, leitor.getServidores(), leitor.getSequenciador());
+    json transacao_json = {
+        {"read", {
+            {"x", "y"}
+        }},
+        {"write", {
+            {"x", "BBB"},
+            {"y", "BBB"}
+        }}
+    };
+
+    // Cliente cria transação 
+    // lendo e modificando os valores de x e y
+    cliente.criarTransacao(transacao_json);
+    // Cliente envia a transação
+    cliente.enviarTransacao();
+
+    std::cout << "Thread " << id << " está sendo executada!" << std::endl;
+}
+
 void teste2() {
     std::cout << "Função 2 executada!" << std::endl;
+    const int num_threads = 5;
+    std::thread threads[num_threads];
+
+    // Criar e iniciar várias threads
+    for (int i = 0; i < num_threads; ++i) {
+        threads[i] = std::thread(tarefa, i);
+    }
+
+    // Esperar todas as threads terminarem
+    for (int i = 0; i < num_threads; ++i) {
+        threads[i].join();
+    }
+
+    std::cout << "Todas as threads terminaram!" << std::endl;
 }
 
 int main(int argc, char* argv[]) {
