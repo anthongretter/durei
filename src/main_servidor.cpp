@@ -16,7 +16,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    std::string db_caminho = "dataBaseServers/dataSet.json";
+    std::string db_caminho = "tmp/dataSet" + std::to_string(id_servidor) + ".json";
     std::string arq = "servidores_config.txt";
     try {
         LeitorConfig leitor(arq);

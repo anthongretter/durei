@@ -8,6 +8,7 @@ PORT 	?= 8000
 DUR := $(abspath $(dir .))
 SRC := $(DUR)/src
 INC := $(DUR)/include
+TMP := $(DUR)/tmp
 
 # Compiling flags
 CXX       := g++
@@ -17,8 +18,8 @@ LDFLAGS   := -lstdc++
 LDLIBS    :=
 
 # Aliases
-RM    	:= rm -f
-RMDIR 	:= rm -fr
+RM    	:= rm -fr
+MKDIR	:= mkdir -p
 TERM  	:= konsole
 TERMCMD	:= $(TERM) --hold --new-tab -e
 KILL  	:= killall
@@ -59,8 +60,10 @@ run_sequencer: $(SEQUENCER_TARGET)
 	@clear && ./$(SEQUENCER_TARGET)
 
 infra: $(SERVER_TARGET) $(SEQUENCER_TARGET)
+	$(MKDIR) $(TMP)
 	($(TERMCMD) "./$(SEQUENCER_TARGET)" &)
 	for server_id in $(shell awk -F":|," 'NR>1 {printf "%d ", $$1}' $(CONF)) ; do \
+		(! [[ -f $(TMP)/dataSet$${server_id}.json ]] && echo "{}" > $(TMP)/dataSet$${server_id}.json); \
 		($(TERMCMD) "./$(SERVER_TARGET) $$server_id" &) ; \
 	done
 
@@ -68,6 +71,6 @@ stop:
 	$(KILL) $(TERM)
 
 clean:
-	$(RM) $(CLIENT_OBJS) $(SERVER_OBJS) $(SEQUENCER_OBJS) $(CLIENT_TARGET) $(SERVER_TARGET) $(SEQUENCER_TARGET)
+	$(RM) $(CLIENT_OBJS) $(SERVER_OBJS) $(SEQUENCER_OBJS) $(CLIENT_TARGET) $(SERVER_TARGET) $(SEQUENCER_TARGET) $(TMP)
 
 .PHONY: all
