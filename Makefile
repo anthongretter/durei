@@ -4,7 +4,7 @@
 DUR := $(abspath $(dir .))
 SRC := $(DUR)/src
 INC := $(DUR)/include
-BIN := $(DUR)/bin
+# BIN := $(DUR)/bin
 
 # Compiling flags
 CXX       := g++
@@ -16,24 +16,43 @@ LDLIBS    :=
 # Aliases
 RM    := rm -f
 RMDIR := rm -fr
-MKDIR := mkdir -p
+# MKDIR := mkdir -p
 
 # Files
-TARGET  := $(BIN)/dur
-SRCS    := $(shell find $(SRC) -type f -name "*.cpp")
-OBJS    := $(SRCS:.cpp=.o)
-HS      := $(wildcard $(INC)/*.hpp)
+CLIENT_TARGET     := cliente
+SERVER_TARGET     := servidor
+SEQUENCER_TARGET  := sequenciador
+CLIENT_SRCS       := $(SRC)/main_cliente.cpp $(filter-out $(SRC)/main_servidor.cpp $(SRC)/main_sequenciador.cpp, $(shell find $(SRC) -type f -name "*.cpp"))
+SERVER_SRCS       := $(SRC)/main_servidor.cpp $(filter-out $(SRC)/main_cliente.cpp $(SRC)/main_sequenciador.cpp, $(shell find $(SRC) -type f -name "*.cpp"))
+SEQUENCER_SRCS    := $(SRC)/main_sequenciador.cpp $(filter-out $(SRC)/main_servidor.cpp $(SRC)/main_cliente.cpp, $(shell find $(SRC) -type f -name "*.cpp"))
+CLIENT_OBJS       := $(CLIENT_SRCS:.cpp=.o)
+SERVER_OBJS       := $(SERVER_SRCS:.cpp=.o)
+SEQUENCER_OBJS    := $(SEQUENCER_SRCS:.cpp=.o)
+HS                := $(wildcard $(INC)/*.hpp)
 
 
-$(TARGET): $(OBJS)
-	$(CXX) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS)
+$(CLIENT_TARGET): $(CLIENT_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
-all: $(TARGET)
+$(SERVER_TARGET): $(SERVER_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
-run: $(TARGET)
-	@clear && $<
+$(SEQUENCER_TARGET): $(SEQUENCER_OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+all: $(CLIENT_TARGET) $(SERVER_TARGET) $(SEQUENCER_TARGET)
+
+
+run_cliente: $(CLIENT_TARGET)
+	@clear && ./$(CLIENT_TARGET)
+
+run_servidor: $(SERVER_TARGET)
+	@clear && ./$(SERVER_TARGET)
+
+run_sequencer: $(SEQUENCER_TARGET)
+	@clear && ./$(SEQUENCER_TARGET)
 
 clean:
-	$(RM) $(OBJS) $(TARGET)
+	$(RM) $(CLIENT_OBJS) $(SERVER_OBJS) $(SEQUENCER_OBJS) $(CLIENT_TARGET) $(SERVER_TARGET) $(SEQUENCER_TARGET)
 
-.PHONY: all
+.PHONY: all run_cliente run_servidor run_sequenciador clean

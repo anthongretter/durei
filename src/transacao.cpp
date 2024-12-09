@@ -5,9 +5,11 @@
 #include <arpa/inet.h>
 #include <nlohmann/json.hpp>
 
-Transacao::Transacao(int t, std::tuple<std::string, int> c, std::tuple<std::string, int> seq, std::tuple<int, std::string, int> serv) {
+Transacao::Transacao(int t, std::tuple<std::string, int> c, std::tuple<std::string, int> seq,
+            std::tuple<int, std::string, int> serv)
+    : Meia(std::get<0>(c), std::get<1>(c))
+{
     t = t;
-    cliente = c;
     sequenciador = seq;
     servidor = serv;
 }
@@ -15,16 +17,29 @@ Transacao::Transacao(int t, std::tuple<std::string, int> c, std::tuple<std::stri
 void Transacao::read(std::string item) {
     auto it = ws.find(item);
     if (it != ws.end()) {
-        std::cout << "VARIÁVEL " << item << " ENCONTRADA EM WS -- VALOR: " << it->second << "\n";
+        std::cout << "ITEM " << item << " ENCONTRADO EM WS -- VALOR: " << it->second << "\n";
     } else {
-        std::cout << "PEDINDO VARIÁVEL " << item << " PARA SERVIDOR " << std::get<0>(servidor) << "\n";
-        std::string mensagem = "read(" + item + ")";
+        std::cout << "PEDINDO ITEM " << item << " PARA SERVIDOR " << std::get<0>(servidor) << "\n";
+        nlohmann::json mensagem = {
+            {"tipo", "read"},
+            {"item", item}
+        };
+        std::string json_str = mensagem.dump(4);
         std::string to_ip = std::get<1>(servidor);
         int to_port = std::get<2>(servidor);
-        // TODO:
-        // mandar por TCP mensagem para to_ip to_port
-        // receber o valor e printar 
-        // std::cout << "VARIÁVEL " << item << " RECEBIDA E ADICIONADA A RS  -- VALOR: " << valor << "   -- VERSÃO: " << versao << "\n";
+        std::string resposta = mandarParaEReceber(to_ip, to_port, json_str);
+        if (resposta == "") return;
+        nlohmann::json json_resposta = nlohmann::json::parse(resposta);
+        int resultado = json_resposta["resultado"];
+        if (resultado == 0) {
+            std::cout << "ITEM " << item << " NÃO ENCONTRADO NO SERVIDOR\n";
+        } else {
+            std::string valor = json_resposta["valor"];
+            int versao = json_resposta["versao"];
+            rs[item] = {valor, versao};
+            std::cout << "ITEM " << item << " RECEBIDO E ADICIONADO A RS  -- VALOR: " <<
+                        valor << "   -- VERSÃO: " << versao << "\n";
+        }
     }
 }
 
@@ -39,30 +54,42 @@ void Transacao::write(std::string item, std::string valor) {
 }
 
 void Transacao::commit() {
-    nlohmann::json commit = {
-        {"from", std::get<0>(cliente)},
-        {"port", std::get<1>(cliente)},
+    nlohmann::json mensagem = {
+        {"tipo", "commit"},
+        {"from", _ip},
+        {"port", _porta},
+        {"transacao", t},
+        {"s_id", std::get<0>(servidor)}, // manda o id do servidor (podia ser qualquer servidor) para só 1 dos servidores responder o resultado da transacao evitando o envio de mensagens desnecessárias dos outros servidores (evita congestionmento na rede)
         {"rs", {}},
         {"ws", {}}
     };
     for (const auto& item : rs) {
         const std::string& var = item.first;
         const std::tuple<std::string, int>& tupla = item.second;
-        commit["rs"][var] = {std::get<0>(tupla), std::get<1>(tupla)};
+        mensagem["rs"][var] = {std::get<0>(tupla), std::get<1>(tupla)};
     }
     for (const auto& item : ws) {
         const std::string& var = item.first;
         const std::string& valor = item.second;
-        commit["ws"][var] = valor;
+        mensagem["ws"][var] = valor;
     }
 
-    std::string json_str = commit.dump(4);
+    std::string json_str = mensagem.dump(4);
     std::cout << json_str << std::endl;
 
-    // TODO:
-    // mandar para sequenciador  -- ip: std::get<0>(sequenciador)   porta: std::get<1>(sequenciador)
-    // receber resposta do servidor  -- tem que informar o servidor dessa transação no json????
-    // apaga a transacao e, dependendo da resposta, escreve mensagem de erro ou de confirmação da transacao
+    mandarPara(std::get<0>(sequenciador), std::get<1>(sequenciador), json_str);
+    escutar();
+}
+
+void Transacao::lidarComMensagem(int cliente_fd, const std::string& menssagem, struct sockaddr_in client_addr) {
+    nlohmann::json json_mensagem = nlohmann::json::parse(menssagem);
+    if (json_mensagem['tipo'] == "abortado") {
+        std::cout << "TRANSAÇÃO ABORTADA POIS CONTÉM INFORMAÇÕES OBSOLETAS\n";
+        pararDeEscutar();
+    } else if (json_mensagem['tipo'] == "comitado") {
+        std::cout << "TRANSAÇÃO EFETIVADA COM SUCESSO!\n";
+        pararDeEscutar();
+    }
 }
 
 void Transacao::printarInfo() {

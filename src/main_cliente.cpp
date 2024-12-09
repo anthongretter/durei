@@ -21,12 +21,12 @@ int main(int argc, char* argv[]) {
     try {
         cliente_port = std::stoi(argv[2]);  // Converte o argumento para inteiro
     } catch (...) {
-        std::cerr << "ID do cliente inválido.\n";
+        std::cerr << "Porta do cliente inválida.\n";
         return 1;
     }
 
     try {
-        LeitorConfig leitor("../src/servidores_config.txt");
+        LeitorConfig leitor("servidores_config.txt");
         Cliente cliente(cliente_ip, cliente_port, leitor.getServidores(), leitor.getSequenciador());
         cliente.executar();
     } catch (const std::runtime_error& e) {

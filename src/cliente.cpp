@@ -82,7 +82,7 @@ void Cliente::executar() {
                                 std::tuple id_info_serv = std::tuple_cat(std::make_tuple(id_servidor), info_serv);
                                 std::tuple<std::string, int> cliente_info(ip, porta);
                                 status = new_t_id;
-                                Transacao nova_transacao(status, cliente_info, sequenciador, id_info_serv);
+                                auto nova_transacao = std::make_shared<Transacao>(status, cliente_info, sequenciador, id_info_serv);
                                 new_t_id++;
                                 transacoes[status] = nova_transacao;
                             } else {
@@ -98,7 +98,7 @@ void Cliente::executar() {
                         std::tuple id_info_serv = std::tuple_cat(std::make_tuple(s_id), info_serv);
                         std::tuple<std::string, int> cliente_info(ip, porta);
                         status = new_t_id;
-                        Transacao nova_transacao(status, cliente_info, sequenciador, id_info_serv);
+                        auto nova_transacao = std::make_shared<Transacao>(status, cliente_info, sequenciador, id_info_serv);
                         transacoes[status] = nova_transacao;
                         new_t_id++;
                     }
@@ -129,7 +129,7 @@ void Cliente::executar() {
             comando.erase(comando.find_last_not_of(" \t") + 1);
 
             auto it = transacoes.find(status);
-            Transacao& t = it->second;
+            Transacao& t = *(it->second);
 
             if (comando == "close") {
                 break;

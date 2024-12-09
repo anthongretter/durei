@@ -9,8 +9,8 @@
 
 class Cliente {
 public:
-    Cliente(std::string cliente_ip, int cliente_port, std::map<int,
-            std::tuple<std::string, int>> serv, std::tuple<std::string, int> seq);
+    Cliente(std::string cliente_ip, int cliente_port,
+            std::map<int,std::tuple<std::string, int>> serv, std::tuple<std::string, int> seq);
     void executar();
 
 private:
@@ -18,7 +18,7 @@ private:
     int porta;
     std::map<int, std::tuple<std::string, int>> servidores; // Mapa de servidores (ID -> (IP, Porta))
     std::tuple<std::string, int> sequenciador;
-    std::map<int, Transacao> transacoes;
+    std::map<int, std::shared_ptr<Transacao>> transacoes;
 
     int escolherServidorAleatorio();
     void printarTransacoes();
