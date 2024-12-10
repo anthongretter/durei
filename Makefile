@@ -34,6 +34,7 @@ CLIENT_SRCS       := $(SRC)/main_cliente.cpp $(filter-out $(SRC)/main_servidor.c
 SERVER_SRCS       := $(SRC)/main_servidor.cpp $(filter-out $(SRC)/main_cliente.cpp $(SRC)/main_sequenciador.cpp $(SRC)/main_mock.cpp, $(shell find $(SRC) -type f -name "*.cpp"))
 SEQUENCER_SRCS    := $(SRC)/main_sequenciador.cpp $(filter-out $(SRC)/main_servidor.cpp $(SRC)/main_cliente.cpp $(SRC)/main_mock.cpp, $(shell find $(SRC) -type f -name "*.cpp"))
 MOCK_SRCS		  := $(SRC)/main_mock.cpp $(filter-out $(SRC)/main_servidor.cpp $(SRC)/main_cliente.cpp $(SRC)/main_sequenciador.cpp, $(shell find $(SRC) -type f -name "*.cpp"))
+CLIENT_OBJS		  := $(CLIENT_SRCS:.cpp=.o)
 SERVER_OBJS       := $(SERVER_SRCS:.cpp=.o)
 MOCK_OBJS         := $(MOCK_SRCS:.cpp=.o)
 SEQUENCER_OBJS    := $(SEQUENCER_SRCS:.cpp=.o)
@@ -81,7 +82,7 @@ stop:
 	$(KILL) $(TERM)
 
 clean:
-	$(RM) $(CLIENT_OBJS) $(SERVER_OBJS) $(SEQUENCER_OBJS) $(CLIENT_TARGET) $(SERVER_TARGET) $(SEQUENCER_TARGET) $(MOCK_TARGET)
+	$(RM) $(CLIENT_OBJS) $(SERVER_OBJS) $(SEQUENCER_OBJS) $(MOCK_OBJS) $(CLIENT_TARGET) $(SERVER_TARGET) $(SEQUENCER_TARGET) $(MOCK_TARGET)
 
 cleandata:
 	$(RM) $(TMP)
