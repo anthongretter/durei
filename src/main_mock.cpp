@@ -157,7 +157,9 @@ int main(int argc, char* argv[]) {
             teste2();
             break;
         default:
-            std::cout << "Entrada inválida!" << std::endl;
+            teste0();
+            teste1();
+            teste2();
             break;
     }
 

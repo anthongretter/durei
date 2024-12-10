@@ -75,12 +75,15 @@ infra: $(SERVER_TARGET) $(SEQUENCER_TARGET)
 	done
 
 test: $(MOCK_TARGET) infra
-	@clear && ./$(MOCK_TARGET)
+	@clear && echo "Waiting a bit for infra..." && sleep 2 && ./$(MOCK_TARGET) $(TEST)
 
 stop:
 	$(KILL) $(TERM)
 
 clean:
-	$(RM) $(CLIENT_OBJS) $(SERVER_OBJS) $(SEQUENCER_OBJS) $(CLIENT_TARGET) $(SERVER_TARGET) $(SEQUENCER_TARGET) $(TMP)
+	$(RM) $(CLIENT_OBJS) $(SERVER_OBJS) $(SEQUENCER_OBJS) $(CLIENT_TARGET) $(SERVER_TARGET) $(SEQUENCER_TARGET) $(MOCK_TARGET)
+
+cleandata:
+	$(RM) $(TMP)
 
 .PHONY: all
