@@ -3,7 +3,12 @@
 .vscode
 .fleet
 
+# DataSets
+tmp/*.json
+
 # Compiling things
-*.o
-bin/*
-!bin/*.*
+src/*.o
+servidor
+cliente
+sequenciador
+mock
