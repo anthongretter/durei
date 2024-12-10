@@ -143,7 +143,11 @@ void teste2() {
 int main(int argc, char* argv[]) {
 
     // Converter o argumento para inteiro
-    int entrada = std::atoi(argv[1]);
+    int entrada = -1;
+
+    if (argc > 1) {
+        entrada = std::atoi(argv[1]);
+    }
 
     // Switch para decidir qual função chamar
     switch (entrada) {
