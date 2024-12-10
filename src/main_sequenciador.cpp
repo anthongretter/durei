@@ -2,6 +2,8 @@
 #include "../include/sequenciador.hpp"
 #include "../include/leitor_config.hpp"
 
+// main do sequenciador
+
 int main(int argc, char* argv[]) {
     if (argc != 1) {
         std::cerr << "Uso: " << argv[0] << " <id_servidor>\n";

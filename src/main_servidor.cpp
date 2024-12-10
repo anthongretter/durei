@@ -2,6 +2,10 @@
 #include "../include/servidor.hpp"
 #include "../include/leitor_config.hpp"
 
+// main do servidor
+// deve ser indicado o id do servidor
+// esse id deve estar em servidores_config.txt com seu ip e porta
+
 int main(int argc, char* argv[]) {
     if (argc != 2) {
         std::cerr << "Uso: " << argv[0] << " <id_servidor>\n";

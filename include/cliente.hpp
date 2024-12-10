@@ -7,6 +7,9 @@
 #include <tuple>
 #include "transacao.hpp"
 
+// Cliente espera inputs do terminal
+// os tratando fazendo requisições aos servidores
+
 class Cliente {
 public:
     Cliente(std::string cliente_ip, int cliente_port,

@@ -18,6 +18,7 @@ Cliente::Cliente(std::string cliente_ip, int cliente_port, std::map<int, std::tu
     sequenciador = seq;
 }
 
+// retorno do comando ls para ver as transacoes ainda nao comitadas
 void Cliente::printarTransacoes() {
     for (const auto& entry : transacoes) {
         int idTransacao = entry.first;           // ID da transação
@@ -25,6 +26,7 @@ void Cliente::printarTransacoes() {
     }
 }
 
+// escolhe um servidor aleatório para fazer a requisição de read(<variavel>)
 int Cliente::escolherServidorAleatorio() {
     std::vector<int> chaves;
     
@@ -43,6 +45,7 @@ int Cliente::escolherServidorAleatorio() {
     return chave_aleatoria;
 }
 
+// executa o cliente, esperando ele digitar algo no terminal
 void Cliente::executar() {
     std::cout << "Cliente iniciado. Digite 'close' para encerrar.\n";
     std::string comando;
@@ -51,6 +54,7 @@ void Cliente::executar() {
     int new_t_id = 1;
 
     while (true) {
+        // usuário nao está "dentro" de nenhuma transação
         if (status == 0) {
             std::cout << "> ";
             std::getline(std::cin, comando);
@@ -121,7 +125,7 @@ void Cliente::executar() {
             } else {
                 std::cout << "Comando desconhecido.\n";
             }
-        } else {
+        } else {   // usuário está "dentro" da transação de id <status>
             std::cout << ">" << "transation_" << status << "> ";
             std::getline(std::cin, comando);
             // Tirando espaços do começo e fim

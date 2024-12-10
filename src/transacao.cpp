@@ -14,6 +14,7 @@ Transacao::Transacao(int t, std::tuple<std::string, int> c, std::tuple<std::stri
     servidor = serv;
 }
 
+// manda requisicao read(<variavel>) para servidor
 void Transacao::read(std::string item) {
     auto it = ws.find(item);
     if (it != ws.end()) {
@@ -43,6 +44,7 @@ void Transacao::read(std::string item) {
     }
 }
 
+// trata write(<variavel>, <valor>)
 void Transacao::write(std::string item, std::string valor) {
     auto it = ws.find(item);
     if (it != ws.end()) {
@@ -77,6 +79,7 @@ void Transacao::commit() {
     std::string json_str = mensagem.dump(4);
 
     mandarPara(std::get<0>(sequenciador), std::get<1>(sequenciador), json_str);
+    std::cout << "FASE DE TÉMINO INICIADA ENVIANDO A SOLICITAÇÃO DE CONFIRMAÇÃO PARA SEQUENCIADOR QUE ENVIARÁ PARA SERVIDORES\n";
     escutar();
 }
 

@@ -26,7 +26,7 @@ private:
     void read(std::string item, int &sockfd);
     void tentarComitar(nlohmann::json json_pedido);
     void printarInfo();
-    void waitForCloseCommand();
+    void esperarComandoClose();
 
 };
 

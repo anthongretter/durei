@@ -6,7 +6,7 @@
 #include <sstream>
 #include <algorithm>
 
-
+// Le o arquivo e salva as informacoes nos atributor servidores e sequenciador
 LeitorConfig::LeitorConfig(std::string arq) {
     arquivo = arq;
 

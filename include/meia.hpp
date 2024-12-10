@@ -26,9 +26,7 @@
 
 
 /**
- * Uma Meia representa uma interface para sockets,
- * podendo criar um socket temporario para receber mensagens,
- * ou registrar outras Meias para mandar mensagens.
+ * Uma Meia representa uma interface para sockets
  */
 class Meia {
 public:

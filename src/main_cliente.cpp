@@ -2,6 +2,9 @@
 #include "../include/cliente.hpp"
 #include "../include/leitor_config.hpp"
 
+// main do cliente
+// deve ser indicado o ip e porta do cliente
+
 int main(int argc, char* argv[]) {
     if (argc != 3) {
         std::cerr << "Uso: " << argv[0] << " <ip_cliente> <porta_cliente>\n";

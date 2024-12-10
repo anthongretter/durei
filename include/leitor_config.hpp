@@ -4,6 +4,7 @@
 #include <string>
 #include <map>
 
+// Faz a leitura do arquivo de configuração (servidores_config.txt)
 class LeitorConfig {
 public:
     LeitorConfig() = default;

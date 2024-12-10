@@ -5,6 +5,9 @@
 #include <map>
 #include "meia.hpp"
 
+// Transação herda de Meia para utilizar a interface de sockets
+// Cada socket pode ter várias transações
+
 class Transacao : public Meia {
 public:
     Transacao() = default;

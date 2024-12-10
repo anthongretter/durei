@@ -7,7 +7,7 @@ Servidor::Servidor(int serv_id, std::string serv_ip, int serv_port, std::string 
 {
     id = serv_id;
     db_caminho = db;
-    inputThread = std::thread(&Servidor::waitForCloseCommand, this);
+    inputThread = std::thread(&Servidor::esperarComandoClose, this);
     std::cout << "Servidor " << serv_id << " pronto! (" << serv_ip << ":" << serv_port << ")" << std::endl;
 }
 
@@ -17,6 +17,7 @@ Servidor::~Servidor() {
     }
 }
 
+// trata mensagem read(<variavel>) vinda do cliente
 void Servidor::read(std::string item, int &sockfd) {
     std::ifstream file(db_caminho);
 
@@ -54,6 +55,8 @@ void Servidor::read(std::string item, int &sockfd) {
 }
 
 void Servidor::tentarComitar(nlohmann::json json_pedido) {
+    std::cout << "TRATANDO SOLICITAÇÃO DE CONFIRMAÇÃO DE TRANSAÇÃO (MENSAGEM DE NÚMERO DE SEQUÊNCIA " << json_pedido["ordem"] << ")\n";
+
     std::ifstream file(db_caminho);
     if (!file.is_open()) {
         std::cerr << "Erro ao abrir o arquivo para leitura!" << std::endl;
@@ -80,9 +83,10 @@ void Servidor::tentarComitar(nlohmann::json json_pedido) {
             {"tipo", "abortado"}
         };
         std::string json_resposta = resposta.dump(4);
-        if (id == json_pedido["s_id"]) {
-            mandarPara(json_pedido["from"], json_pedido["port"], json_resposta); }
         std::cout << "TRANSAÇÃO " << json_pedido["transacao"] << " DO CLIENTE COM IP " << json_pedido["from"] << " E PORTA " << json_pedido["port"] << " ABORTADA\n";
+        if (id == json_pedido["s_id"]) {
+            mandarPara(json_pedido["from"], json_pedido["port"], json_resposta);
+            std::cout << "AVISA O CLIENTE QUE A TRANSAÇÃO FOI ABORTADA\n";}
         
     } else {
         if (json_pedido.contains("ws") && json_pedido["ws"].is_object()) {
@@ -112,20 +116,21 @@ void Servidor::tentarComitar(nlohmann::json json_pedido) {
             {"tipo", "comitado"}
         };
         std::string json_resposta = resposta.dump(4);
-        if (id == json_pedido["s_id"]) {
-            mandarPara(json_pedido["from"], json_pedido["port"], json_resposta); }
         std::cout << "TRANSAÇÃO " << json_pedido["transacao"] << " DO CLIENTE COM IP " << json_pedido["from"] << " E PORTA " << json_pedido["port"] << " CONFIRMADA\n";
+        if (id == json_pedido["s_id"]) {
+            mandarPara(json_pedido["from"], json_pedido["port"], json_resposta);
+            std::cout << "AVISA O CLIENTE QUE A TRANSAÇÃO FOI CONFIRMADA\n";}
         printarInfo();
     }
 }
 
+// Printa o banco de dados do servidor
 void Servidor::printarInfo() {
     std::ifstream file(db_caminho);
     if (!file.is_open()) {
         std::cerr << "Erro ao abrir o arquivo para leitura!" << std::endl;
         return;
     }
-    std::cout << "comeco print\n";
     nlohmann::json dataSet;
     file >> dataSet;
     file.close();
@@ -139,9 +144,13 @@ void Servidor::printarInfo() {
 
         std::cout << "Item: " << item << ", Valor: " << valor << ", Versão: " << versao << "\n";
     }
+    std::cout << "\n";
 }
 
-void Servidor::waitForCloseCommand() {
+// Thread para esperar um "close" de input do terminal
+// Serve para fechar as portas corretamente e finalizar
+// o programa sem precisar interrompe-lo
+void Servidor::esperarComandoClose() {
     std::string command;
     while (running) {
         std::cin >> command;
@@ -161,6 +170,7 @@ void Servidor::lidarComMensagem(int cliente_fd, const std::string& menssagem) {
     if (json_m["tipo"] == "read") {
         read(json_m["item"], cliente_fd);
     } else if (json_m["tipo"] == "commit") {
+        std::cout << "MENSAGEM COM NÚMERO DE SEQUÊNCIA " << json_m["ordem"] << " RECEBIDA DO SEQUENCIADOR\n";
         pendentes.push_back(json_m);
         while (true) {
             bool continua = false;
@@ -180,5 +190,4 @@ void Servidor::lidarComMensagem(int cliente_fd, const std::string& menssagem) {
             
         }
     }
-    std::cout << "lidou\n";
 }

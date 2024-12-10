@@ -37,7 +37,7 @@ void Meia::mandarPara(const std::string &ip, const int &porta, const std::string
 
 
 std::string Meia::mandarParaEReceber(const std::string &ip, const int &porta, const std::string &mensagem) {
-    char buffer[1024] = {0};
+    char buffer[2048] = {0};
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) {
         perror("Erro ao criar socket");
@@ -102,7 +102,7 @@ void Meia::escutar() {
         if (client_fd < 0) {
             continue;
         }
-        char buffer[1024] = {0};
+        char buffer[2048] = {0};
         int bytes_read = recv(client_fd, buffer, sizeof(buffer), 0);
 
         if (bytes_read > 0) {
